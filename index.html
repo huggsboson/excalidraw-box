@@ -213,7 +213,7 @@
             const lastElementsRef = React.useRef(null);
             const pendingElementsRef = React.useRef(null); // Currently pending save
             const [saveStatus, setSaveStatus] = React.useState('');
-            const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+            const [excalidrawAPI, setExcalidrawAPI] = React.useState(null);
             
             React.useEffect(() => {
                 async function init() {
