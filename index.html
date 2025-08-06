@@ -12,7 +12,6 @@
             font-family: sans-serif;
         }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.css">
 </head>
 <body>
     <div id="app"><div class="loading">Loading...</div></div>
@@ -24,13 +23,9 @@
     <!-- Babel Standalone for JSX transformation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Load Excalidraw -->
-    <script src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.production.min.js"></script>
-    
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
         const { createRoot } = ReactDOM;
-        const { Excalidraw } = ExcalidrawLib;
         
         // Box OAuth Configuration
         const BOX_CLIENT_ID = 'vzdokimwij921pa0xe7cqy2v88k4zz1a';
@@ -86,7 +81,20 @@
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [accessToken, setAccessToken] = useState(null);
+            const [Excalidraw, setExcalidraw] = useState(null);
             const saveTimeoutRef = useRef(null);
+            
+            // Dynamically import Excalidraw
+            useEffect(() => {
+                import('https://esm.sh/@excalidraw/excalidraw@0.17.0')
+                    .then(module => {
+                        setExcalidraw(() => module.Excalidraw);
+                    })
+                    .catch(err => {
+                        console.error('Failed to load Excalidraw:', err);
+                        setError('Failed to load Excalidraw editor');
+                    });
+            }, []);
             
             useEffect(() => {
                 async function init() {
@@ -131,8 +139,10 @@
                     setLoading(false);
                 }
                 
-                init();
-            }, []);
+                if (Excalidraw) {
+                    init();
+                }
+            }, [Excalidraw]);
             
             const handleChange = useCallback((elements, appState, files) => {
                 if (!fileId || !accessToken) return;
@@ -178,7 +188,7 @@
                 }, 2000); // Save 2 seconds after last change
             }, [fileId, accessToken]);
             
-            if (loading) {
+            if (loading || !Excalidraw) {
                 return <div className="loading">Loading Excalidraw...</div>;
             }
             
@@ -186,12 +196,10 @@
                 return <div className="loading">Error: {error}</div>;
             }
             
-            return (
-                <Excalidraw
-                    initialData={initialData}
-                    onChange={handleChange}
-                />
-            );
+            return React.createElement(Excalidraw, {
+                initialData: initialData,
+                onChange: handleChange
+            });
         }
         
         // Wait for DOM to be ready
