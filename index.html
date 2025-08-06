@@ -209,6 +209,8 @@
             const [accessToken, setAccessToken] = React.useState(null);
             const [loadingStage, setLoadingStage] = React.useState('Initializing...');
             const saveTimeoutRef = React.useRef(null);
+            const maxSaveTimeoutRef = React.useRef(null);
+            const lastElementsRef = React.useRef(null);
             const [saveStatus, setSaveStatus] = React.useState('');
             
             React.useEffect(() => {
