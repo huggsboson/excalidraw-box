@@ -357,7 +357,7 @@
 
             const excalidrawProps = {
                 onChange: handleChange,
-                excalidrawAPI: setExcalidrawAPI,
+                excalidrawAPI: (api) => setExcalidrawAPI(api),
                 isCollaborating: false,
                 style: { height: "100vh" }
             };
