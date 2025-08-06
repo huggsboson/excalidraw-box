@@ -24,10 +24,6 @@
         // Box OAuth Configuration
         const BOX_CLIENT_ID = 'vzdokimwij921pa0xe7cqy2v88k4zz1a';
         const BOX_CLIENT_SECRET = 'M2ateaFJpY5y0gPNip3tT7PNLzUEreF9'; // Note: This is exposed in client-side code!
-        const REDIRECT_URI = window.location.origin + window.location.pathname;
-        
-        // Get parameters from URL (Box sends these as GET params)
-        const params = new URLSearchParams(window.location.search);
         const authCode = params.get('authCode');
         const fileId = params.get('fileId');
         
@@ -44,8 +40,7 @@
                         grant_type: 'authorization_code',
                         code: code,
                         client_id: BOX_CLIENT_ID,
-                        client_secret: BOX_CLIENT_SECRET,
-                        redirect_uri: "https://huggsboson.github.io/excalidraw-box" 
+                        client_secret: BOX_CLIENT_SECRET
                     })
                 });
                 
