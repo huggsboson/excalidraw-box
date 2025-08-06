@@ -264,6 +264,15 @@
             const handleChange = React.useCallback((elements, appState, files) => {
                 if (!fileId || !accessToken) return;
                 
+                // Only save on actual drawing changes, not cursor/viewport changes
+                if (appState.isLoading || appState.isResizing) return;
+    
+                // Check if this is just a cursor/selection change
+                const meaningfulChange = elements.length !== lastElementsRef.current?.length ||
+                    elements.some((el, i) => el.id !== lastElementsRef.current?.[i]?.id);
+    
+                if (!meaningfulChange) return;
+
                 // Check if elements actually changed
                 const elementsChanged = JSON.stringify(elements) !== JSON.stringify(lastElementsRef.current);
                 
@@ -271,9 +280,9 @@
                     return; // No actual drawing changes, skip save
                 }
 
-                const elementsChanged = JSON.stringify(elements) !== JSON.stringify(pendingElementsRef.current);
+                const elementsChangedFromPending = JSON.stringify(elements) !== JSON.stringify(pendingElementsRef.current);
 
-                if (!elementsChanged) {
+                if (!elementsChangedFromPending) {
                     return; // No change from what's already pending
                 }
                 
