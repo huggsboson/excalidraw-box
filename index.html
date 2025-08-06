@@ -211,6 +211,7 @@
             const saveTimeoutRef = React.useRef(null);
             const maxSaveTimeoutRef = React.useRef(null);
             const lastElementsRef = React.useRef(null);
+            const pendingElementsRef = React.useRef(null); // Currently pending save
             const [saveStatus, setSaveStatus] = React.useState('');
             
             React.useEffect(() => {
@@ -267,10 +268,17 @@
                 const elementsChanged = JSON.stringify(elements) !== JSON.stringify(lastElementsRef.current);
                 
                 if (!elementsChanged) {
-                    console.log('No changes, skipping saving');
                     return; // No actual drawing changes, skip save
                 }
+
+                const elementsChanged = JSON.stringify(elements) !== JSON.stringify(pendingElementsRef.current);
+
+                if (!elementsChanged) {
+                    return; // No change from what's already pending
+                }
                 
+		pendingElementsRef.current = elements;
+
                 console.log('Elements changed, scheduling save...');
                 setSaveStatus('Changes detected...');
                 
