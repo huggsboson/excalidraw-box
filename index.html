@@ -24,6 +24,10 @@
         // Box OAuth Configuration
         const BOX_CLIENT_ID = 'vzdokimwij921pa0xe7cqy2v88k4zz1a';
         const BOX_CLIENT_SECRET = 'M2ateaFJpY5y0gPNip3tT7PNLzUEreF9'; // Note: This is exposed in client-side code!
+
+
+	// Get parameters from URL (Box sends these as GET params)
+	const params = new URLSearchParams(window.location.search);	
         const authCode = params.get('authCode');
         const fileId = params.get('fileId');
         
