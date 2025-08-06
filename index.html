@@ -86,7 +86,7 @@
         import * as ExcalidrawLib from 'https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.js?external=react,react-dom';
         import React from "https://esm.sh/react@19.0.0";
         import ReactDOM from "https://esm.sh/react-dom@19.0.0";
-	import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client';
+        import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client';
 
         window.ExcalidrawLib = ExcalidrawLib;
         console.log("Excalidraw library", ExcalidrawLib);
@@ -213,6 +213,7 @@
             const lastElementsRef = React.useRef(null);
             const pendingElementsRef = React.useRef(null); // Currently pending save
             const [saveStatus, setSaveStatus] = React.useState('');
+            const [excalidrawAPI, setExcalidrawAPI] = useState(null);
             
             React.useEffect(() => {
                 async function init() {
@@ -315,7 +316,7 @@
                 
                 async function performSave(elements, appState, files) {
                     setSaveStatus('Saving...');
-                    ExcalidrawLib.Excalidraw.setToast("Saving...", true, 1000);
+                    excalidrawAPI.setToast("Saving...", true, 1000);
                     
                     const data = {
                         type: 'excalidraw',
@@ -356,6 +357,7 @@
 
             const excalidrawProps = {
                 onChange: handleChange,
+                excalidrawAPI: setExcalidrawAPI,
                 isCollaborating: false,
                 style: { height: "100vh" }
             };
