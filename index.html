@@ -286,7 +286,7 @@
                     return; // No change from what's already pending
                 }
                 
-		pendingElementsRef.current = elements;
+    	        pendingElementsRef.current = elements;
 
                 console.log('Elements changed, scheduling save...');
                 setSaveStatus('Changes detected...');
@@ -315,6 +315,7 @@
                 
                 async function performSave(elements, appState, files) {
                     setSaveStatus('Saving...');
+                    ExcalidrawLib.Excalidraw.setToast("Saving...", true, 1000);
                     
                     const data = {
                         type: 'excalidraw',
@@ -355,7 +356,7 @@
 
             const excalidrawProps = {
                 onChange: handleChange,
-		isCollaborating: false,
+                isCollaborating: false,
                 style: { height: "100vh" }
             };
             
