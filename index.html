@@ -257,16 +257,46 @@
                 init();
             }, []);
             
+            
             const handleChange = React.useCallback((elements, appState, files) => {
                 if (!fileId || !accessToken) return;
                 
-                setSaveStatus('Saving...');
+                // Check if elements actually changed
+                const elementsChanged = JSON.stringify(elements) !== JSON.stringify(lastElementsRef.current);
                 
-                // Clear existing timeout
+                if (!elementsChanged) {
+                    console.log('No changes, skipping saving');
+                    return; // No actual drawing changes, skip save
+                }
+                
+                console.log('Elements changed, scheduling save...');
+                setSaveStatus('Changes detected...');
+                
+                // Clear existing 5-second timeout
                 clearTimeout(saveTimeoutRef.current);
                 
-                // Set new timeout for saving
+                // Set up 60-second max timeout if not already running
+                if (!maxSaveTimeoutRef.current) {
+                    console.log('Starting 60-second max timer');
+                    maxSaveTimeoutRef.current = setTimeout(async () => {
+                        console.log('60-second max timer triggered');
+                        await performSave(elements, appState, files);
+                        maxSaveTimeoutRef.current = null;
+                    }, 60000); // 60 seconds max
+                }
+                
+                // Set up 5-second inactivity timeout
                 saveTimeoutRef.current = setTimeout(async () => {
+                    console.log('5-second inactivity timer triggered');
+                    await performSave(elements, appState, files);
+                    // Clear the max timeout since we saved
+                    clearTimeout(maxSaveTimeoutRef.current);
+                    maxSaveTimeoutRef.current = null;
+                }, 5000); // 5 seconds after last change
+                
+                async function performSave(elements, appState, files) {
+                    setSaveStatus('Saving...');
+                    
                     const data = {
                         type: 'excalidraw',
                         version: 2,
@@ -278,11 +308,14 @@
                     const success = await saveFileToBox(fileId, accessToken, data);
                     setSaveStatus(success ? 'Saved' : 'Save failed');
                     
+                    // Update the last saved elements
+                    lastElementsRef.current = elements;
+                    
                     // Clear status after 2 seconds
                     setTimeout(() => setSaveStatus(''), 2000);
-                }, 2000);
+                }
             }, [fileId, accessToken]);
-            
+
             if (loading) {
                 return React.createElement('div', { className: 'loading' }, [
                     'Loading Excalidraw for Box...',
@@ -303,6 +336,7 @@
 
             const excalidrawProps = {
                 onChange: handleChange,
+		isCollaborating: false,
                 style: { height: "100vh" }
             };
             
@@ -334,11 +368,6 @@
                 )
             );
         };
-
-console.log('ReactDOM object:', ReactDOM);
-console.log('createRoot:', createRoot);
-console.log('ReactDOM.createRoot:', ReactDOM.createRoot);
-console.log('Available methods:', Object.keys(ReactDOM));
 
         const excalidrawWrapper = document.getElementById("app");
         const root = createRoot(excalidrawWrapper);
