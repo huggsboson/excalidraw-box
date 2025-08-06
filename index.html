@@ -86,6 +86,7 @@
         import * as ExcalidrawLib from 'https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.js?external=react,react-dom';
         import React from "https://esm.sh/react@19.0.0";
         import ReactDOM from "https://esm.sh/react-dom@19.0.0";
+	import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client';
 
         window.ExcalidrawLib = ExcalidrawLib;
         console.log("Excalidraw library", ExcalidrawLib);
@@ -335,6 +336,7 @@
         };
 
 console.log('ReactDOM object:', ReactDOM);
+console.log('createRoot:', createRoot);
 console.log('ReactDOM.createRoot:', ReactDOM.createRoot);
 console.log('Available methods:', Object.keys(ReactDOM));
 
