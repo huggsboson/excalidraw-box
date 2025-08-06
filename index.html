@@ -1,0 +1,72 @@
+// Simple single HTML file approach
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Excalidraw for Box</title>
+    <style>
+        #app { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script type="module">
+        import React from 'https://esm.sh/react@18';
+        import ReactDOM from 'https://esm.sh/react-dom@18';
+        import { Excalidraw } from 'https://esm.sh/@excalidraw/excalidraw';
+        
+        // Box OAuth (using PKCE for client-side)
+        const BOX_CLIENT_ID = 'your_client_id';
+        const REDIRECT_URI = window.location.origin;
+        
+        // Get file ID from URL params (Box will pass this)
+        const params = new URLSearchParams(window.location.search);
+        const fileId = params.get('fileId');
+        const accessToken = params.get('access_token') || localStorage.getItem('box_token');
+        
+        function App() {
+            const [initialData, setInitialData] = React.useState(null);
+            const saveTimeoutRef = React.useRef(null);
+            
+            React.useEffect(() => {
+                if (fileId && accessToken) {
+                    // Load file from Box
+                    fetch(`https://api.box.com/2.0/files/${fileId}/content`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    })
+                    .then(r => r.json())
+                    .then(data => setInitialData(data));
+                }
+            }, []);
+            
+            const handleChange = (elements, appState, files) => {
+                // Simple debounced save
+                clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = setTimeout(() => {
+                    const data = { elements, appState, files };
+                    
+                    // Save to Box
+                    fetch(`https://upload.box.com/api/2.0/files/${fileId}/content`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                        },
+                        body: new FormData().append('file', 
+                            new Blob([JSON.stringify(data)], { type: 'application/json' })
+                        )
+                    });
+                }, 2000); // Save 2 seconds after last change
+            };
+            
+            return (
+                <Excalidraw
+                    initialData={initialData}
+                    onChange={handleChange}
+                />
+            );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('app'));
+    </script>
+</body>
+</html>
