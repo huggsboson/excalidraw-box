@@ -16,20 +16,20 @@
 <body>
     <div id="app"><div class="loading">Loading...</div></div>
     
-    <script type="module">
-        import React from 'https://esm.sh/react@18';
-        import ReactDOM from 'https://esm.sh/react-dom@18';
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef, useCallback } from 'https://esm.sh/react@18';
+        import { createRoot } from 'https://esm.sh/react-dom@18/client';
         import { Excalidraw } from 'https://esm.sh/@excalidraw/excalidraw';
         
         // Box OAuth Configuration
-        const BOX_CLIENT_ID = 'vzdokimwij921pa0xe7cqy2v88k4zz1a';
-        const BOX_CLIENT_SECRET = 'M2ateaFJpY5y0gPNip3tT7PNLzUEreF9'; // Note: This is exposed in client-side code!
+        const BOX_CLIENT_ID = 'your_client_id';
+        const BOX_CLIENT_SECRET = 'your_client_secret'; // Note: This is exposed in client-side code!
         const REDIRECT_URI = window.location.origin + window.location.pathname;
         
         // Get parameters from URL (Box sends these as GET params)
         const params = new URLSearchParams(window.location.search);
-        const authCode = params.get('authCode');
-        const fileId = params.get('fileId');
+        const authCode = params.get('code');
+        const fileId = params.get('file_id') || params.get('fileId');
         
         async function exchangeCodeForToken(code) {
             try {
@@ -69,13 +69,13 @@
         }
         
         function App() {
-            const [initialData, setInitialData] = React.useState(null);
-            const [loading, setLoading] = React.useState(true);
-            const [error, setError] = React.useState(null);
-            const [accessToken, setAccessToken] = React.useState(null);
-            const saveTimeoutRef = React.useRef(null);
+            const [initialData, setInitialData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [accessToken, setAccessToken] = useState(null);
+            const saveTimeoutRef = useRef(null);
             
-            React.useEffect(() => {
+            useEffect(() => {
                 async function init() {
                     // Must have auth code to proceed
                     if (!authCode) {
@@ -121,7 +121,7 @@
                 init();
             }, []);
             
-            const handleChange = React.useCallback((elements, appState, files) => {
+            const handleChange = useCallback((elements, appState, files) => {
                 if (!fileId || !accessToken) return;
                 
                 // Clear existing timeout
@@ -181,7 +181,13 @@
             );
         }
         
-        ReactDOM.render(<App />, document.getElementById('app'));
+        // Create root and render
+        const container = document.getElementById('app');
+        const root = createRoot(container);
+        root.render(<App />);
     </script>
+    
+    <!-- Babel Standalone for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </body>
 </html>
