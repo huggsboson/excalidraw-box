@@ -93,8 +93,19 @@
         
         // Helper functions for file serialization
         async function serializeFiles(files) {
+            console.log('serializeFiles called with:', files);
+            console.log('files type:', typeof files);
+            console.log('files instanceof Map:', files instanceof Map);
+            console.log('files keys:', files ? Object.keys(files) : 'no files');
+            
             const serializedFiles = {};
-            for (const [fileId, file] of Object.entries(files)) {
+            
+            // Handle both Map and Object formats
+            const entries = files instanceof Map ? files.entries() : Object.entries(files || {});
+            
+            for (const [fileId, file] of entries) {
+                console.log(`Processing file ${fileId}:`, file);
+                
                 if (file.dataURL) {
                     // File already has dataURL, use it directly
                     serializedFiles[fileId] = {
@@ -115,6 +126,8 @@
                     serializedFiles[fileId] = file;
                 }
             }
+            
+            console.log('serializedFiles result:', serializedFiles);
             return serializedFiles;
         }
         
