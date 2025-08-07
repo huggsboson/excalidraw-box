@@ -133,8 +133,9 @@
         
         function deserializeFiles(serializedFiles) {
             console.log('deserializeFiles called with:', serializedFiles);
-            const files = new Map();
-            for (const [fileId, fileData] of Object.entries(serializedFiles)) {
+            const files = {}; // Use Object instead of Map
+            
+            for (const [fileId, fileData] of Object.entries(serializedFiles || {})) {
                 console.log(`Deserializing file ${fileId}:`, fileData);
                 if (fileData.dataURL) {
                     // Create a file-like object from the dataURL
@@ -145,12 +146,13 @@
                         created: fileData.created,
                         lastRetrieved: Date.now()
                     };
-                    files.set(fileId, fileObject);
-                    console.log(`Added file to Map:`, fileObject);
+                    files[fileId] = fileObject;
+                    console.log(`Added file to Object:`, fileObject);
                 }
             }
-            console.log('Final files Map:', files);
-            console.log('Files Map size:', files.size);
+            
+            console.log('Final files Object:', files);
+            console.log('Files Object keys:', Object.keys(files));
             return files;
         }
         
