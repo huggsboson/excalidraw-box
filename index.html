@@ -95,15 +95,11 @@
         async function serializeFiles(files) {
             console.log('serializeFiles called with:', files);
             console.log('files type:', typeof files);
-            console.log('files instanceof Map:', files instanceof Map);
-            console.log('files keys:', files ? Object.keys(files) : 'no files');
+            console.log('files keys:', Object.keys(files || {}));
             
             const serializedFiles = {};
             
-            // Handle both Map and Object formats
-            const entries = files instanceof Map ? files.entries() : Object.entries(files || {});
-            
-            for (const [fileId, file] of entries) {
+            for (const [fileId, file] of Object.entries(files || {})) {
                 console.log(`Processing file ${fileId}:`, file);
                 
                 if (file.dataURL) {
@@ -112,8 +108,10 @@
                         ...file,
                         dataURL: file.dataURL
                     };
+                    console.log(`File ${fileId} already has dataURL`);
                 } else if (file instanceof File || file instanceof Blob) {
                     // Convert File/Blob to base64 dataURL
+                    console.log(`Converting file ${fileId} to dataURL`);
                     const dataURL = await blobToDataURL(file);
                     serializedFiles[fileId] = {
                         id: file.id || fileId,
@@ -123,28 +121,36 @@
                     };
                 } else {
                     // Already serialized or unknown format
+                    console.log(`File ${fileId} in unknown format, copying as-is`);
                     serializedFiles[fileId] = file;
                 }
             }
             
             console.log('serializedFiles result:', serializedFiles);
+            console.log('serializedFiles keys:', Object.keys(serializedFiles));
             return serializedFiles;
         }
         
         function deserializeFiles(serializedFiles) {
+            console.log('deserializeFiles called with:', serializedFiles);
             const files = new Map();
             for (const [fileId, fileData] of Object.entries(serializedFiles)) {
+                console.log(`Deserializing file ${fileId}:`, fileData);
                 if (fileData.dataURL) {
                     // Create a file-like object from the dataURL
-                    files.set(fileId, {
+                    const fileObject = {
                         id: fileData.id || fileId,
                         dataURL: fileData.dataURL,
                         mimeType: fileData.mimeType,
                         created: fileData.created,
                         lastRetrieved: Date.now()
-                    });
+                    };
+                    files.set(fileId, fileObject);
+                    console.log(`Added file to Map:`, fileObject);
                 }
             }
+            console.log('Final files Map:', files);
+            console.log('Files Map size:', files.size);
             return files;
         }
         
@@ -401,8 +407,18 @@
                     let filesToSave = files;
                     if (excalidrawAPI && (!files || Object.keys(files).length === 0)) {
                         try {
-                            filesToSave = excalidrawAPI.getFiles();
-                            console.log('Got files from API:', filesToSave);
+                            // Try different API methods to get files
+                            if (excalidrawAPI.getFiles) {
+                                filesToSave = excalidrawAPI.getFiles();
+                                console.log('Got files from getFiles():', filesToSave);
+                            } else if (excalidrawAPI.getSceneElementsIncludingDeleted) {
+                                const allElements = excalidrawAPI.getSceneElementsIncludingDeleted();
+                                console.log('All elements including deleted:', allElements);
+                                const imageElements = allElements.filter(el => el.type === 'image');
+                                console.log('Image elements found:', imageElements);
+                            } else {
+                                console.log('Available API methods:', Object.getOwnPropertyNames(excalidrawAPI));
+                            }
                         } catch (e) {
                             console.log('Could not get files from API:', e);
                             filesToSave = {};
@@ -457,7 +473,19 @@
                 onChange: handleChange,
                 excalidrawAPI: (api) => {
                     setExcalidrawAPI(api);
-                    console.log('Excalidraw API set:', api);
+                    console.log('Excalidraw API available:', api);
+                    console.log('API methods:', Object.getOwnPropertyNames(api));
+                    
+                    // Try different ways to access files
+                    if (api.getFiles) {
+                        console.log('API has getFiles method');
+                    }
+                    if (api.getSceneElements) {
+                        console.log('API has getSceneElements method');
+                    }
+                    if (api.getAppState) {
+                        console.log('API has getAppState method');
+                    }
                 },
                 isCollaborating: false,
                 style: { height: "100vh" }
