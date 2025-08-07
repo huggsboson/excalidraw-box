@@ -90,6 +90,59 @@
 
         window.ExcalidrawLib = ExcalidrawLib;
         console.log("Excalidraw library", ExcalidrawLib);
+        
+        // Helper functions for file serialization
+        async function serializeFiles(files) {
+            const serializedFiles = {};
+            for (const [fileId, file] of Object.entries(files)) {
+                if (file.dataURL) {
+                    // File already has dataURL, use it directly
+                    serializedFiles[fileId] = {
+                        ...file,
+                        dataURL: file.dataURL
+                    };
+                } else if (file instanceof File || file instanceof Blob) {
+                    // Convert File/Blob to base64 dataURL
+                    const dataURL = await blobToDataURL(file);
+                    serializedFiles[fileId] = {
+                        id: file.id || fileId,
+                        dataURL: dataURL,
+                        mimeType: file.type,
+                        created: file.created || Date.now()
+                    };
+                } else {
+                    // Already serialized or unknown format
+                    serializedFiles[fileId] = file;
+                }
+            }
+            return serializedFiles;
+        }
+        
+        function deserializeFiles(serializedFiles) {
+            const files = new Map();
+            for (const [fileId, fileData] of Object.entries(serializedFiles)) {
+                if (fileData.dataURL) {
+                    // Create a file-like object from the dataURL
+                    files.set(fileId, {
+                        id: fileData.id || fileId,
+                        dataURL: fileData.dataURL,
+                        mimeType: fileData.mimeType,
+                        created: fileData.created,
+                        lastRetrieved: Date.now()
+                    });
+                }
+            }
+            return files;
+        }
+        
+        function blobToDataURL(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
 
         // Box OAuth Configuration
         const BOX_CLIENT_ID = 'vzdokimwij921pa0xe7cqy2v88k4zz1a';
@@ -159,7 +212,12 @@
                 
                 const text = await response.text();
                 try {
-                    return JSON.parse(text);
+                    const data = JSON.parse(text);
+                    // Deserialize files if they exist
+                    if (data.files) {
+                        data.files = deserializeFiles(data.files);
+                    }
+                    return data;
                 } catch (parseError) {
                     console.log('File is not JSON, creating new drawing');
                     return null;
@@ -174,8 +232,14 @@
             try {
                 console.log('Saving to Box...');
                 
+                // Serialize files before saving
+                const dataToSave = {
+                    ...data,
+                    files: await serializeFiles(data.files || {})
+                };
+                
                 const formData = new FormData();
-                const blob = new Blob([JSON.stringify(data, null, 2)], { 
+                const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { 
                     type: 'application/json' 
                 });
                 formData.append('file', blob, 'drawing.excalidraw');
@@ -210,8 +274,7 @@
             const [loadingStage, setLoadingStage] = React.useState('Initializing...');
             const saveTimeoutRef = React.useRef(null);
             const maxSaveTimeoutRef = React.useRef(null);
-            const lastElementsRef = React.useRef(null);
-            const pendingElementsRef = React.useRef(null);
+            const lastSceneVersionRef = React.useRef(null);
             const [excalidrawAPI, setExcalidrawAPI] = React.useState(null);
             
             React.useEffect(() => {
@@ -243,9 +306,10 @@
                             if (fileData) {
                                 console.log('File loaded:', fileData);
                                 setInitialData(fileData);
-                                // Initialize refs with loaded data
-                                lastElementsRef.current = fileData.elements || [];
-                                pendingElementsRef.current = fileData.elements || [];
+                                // Initialize scene version if available
+                                if (fileData.elements && ExcalidrawLib.getSceneVersion) {
+                                    lastSceneVersionRef.current = ExcalidrawLib.getSceneVersion(fileData.elements);
+                                }
                             }
                         }
                         
@@ -267,25 +331,17 @@
             const handleChange = React.useCallback((elements, appState, files) => {
                 if (!fileId || !accessToken) return;
                 
-                // Only save on actual drawing changes, not cursor/viewport changes
-                if (appState.isLoading || appState.isResizing) return;
-    
-                // Check if this is just a cursor/selection change
-                const meaningfulChange = elements.length !== lastElementsRef.current?.length ||
-                    elements.some((el, i) => el.id !== lastElementsRef.current?.[i]?.id);
-    
-                if (!meaningfulChange) return;
-
-                // Check if elements actually changed from what's pending
-                const elementsChangedFromPending = JSON.stringify(elements) !== JSON.stringify(pendingElementsRef.current);
-
-                if (!elementsChangedFromPending) {
-                    return; // No change from what's already pending
+                // Use scene version to detect meaningful changes
+                const currentSceneVersion = ExcalidrawLib.getSceneVersion ? 
+                    ExcalidrawLib.getSceneVersion(elements) : 
+                    elements.length; // fallback to element count
+                
+                // Skip if no meaningful change detected
+                if (currentSceneVersion === lastSceneVersionRef.current) {
+                    return;
                 }
                 
-    	        pendingElementsRef.current = elements;
-
-                console.log('Elements changed, scheduling save...');
+                console.log('Scene version changed:', lastSceneVersionRef.current, '->', currentSceneVersion);
                 
                 // Show toast if API is available
                 if (excalidrawAPI) {
@@ -339,8 +395,10 @@
                         });
                     }
                     
-                    // Update the last saved elements
-                    lastElementsRef.current = elements;
+                    // Update the last scene version
+                    lastSceneVersionRef.current = ExcalidrawLib.getSceneVersion ? 
+                        ExcalidrawLib.getSceneVersion(elements) : 
+                        elements.length;
                 }
             }, [fileId, accessToken, excalidrawAPI]);
 
