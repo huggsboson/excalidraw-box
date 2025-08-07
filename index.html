@@ -397,12 +397,26 @@
                         excalidrawAPI.setToast({ message: "Saving to Box..." });
                     }
                     
+                    // Try to get files from the API if not provided in onChange
+                    let filesToSave = files;
+                    if (excalidrawAPI && (!files || Object.keys(files).length === 0)) {
+                        try {
+                            filesToSave = excalidrawAPI.getFiles();
+                            console.log('Got files from API:', filesToSave);
+                        } catch (e) {
+                            console.log('Could not get files from API:', e);
+                            filesToSave = {};
+                        }
+                    }
+                    
+                    console.log('Files to save:', filesToSave);
+                    
                     const data = {
                         type: 'excalidraw',
                         version: 2,
                         elements,
                         appState,
-                        files
+                        files: filesToSave
                     };
                     
                     const success = await saveFileToBox(fileId, accessToken, data);
