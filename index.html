@@ -30,15 +30,63 @@
             max-width: 600px;
             text-align: center;
         }
+        .container {
+          font-family: sans-serif;
+          text-align: center;
+        }
+
+        .button-wrapper button {
+          z-index: 1;
+          height: 40px;
+          width: 100px;
+          margin: 10px;
+          padding: 5px;
+}
+
+        .excalidraw .App-menu_top .buttonList {
+          display: flex;
+        }
+
+        .excalidraw-wrapper {
+          height: 800px;
+          margin: 50px;
+          position: relative;
+        }
+
+        :root[dir="ltr"]
+          .excalidraw
+          .layer-ui__wrapper
+          .zen-mode-transition.App-menu_bottom--transition-left {
+          transform: none;
+        }
     </style>
+    <link
+      rel="stylesheet"
+      href="https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.css"
+    />
+    <script>
+        window.EXCALIDRAW_ASSET_PATH = "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/prod/";
+    </script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@19.0.0",
+          "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+          "react-dom": "https://esm.sh/react-dom@19.0.0"
+          }
+      }
+    </script>
 </head>
 <body>
-    <div id="app"><div class="loading">Loading Excalidraw for Box...<br/><small>Initializing...</small></div></div>
+    <div class="container">
+      <div id="app"></div>
+    </div>
     
     <script type="module">
         import * as ExcalidrawLib from 'https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.js?external=react,react-dom';
         import React from "https://esm.sh/react@19.0.0";
         import ReactDOM from "https://esm.sh/react-dom@19.0.0";
+        import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client';
 
         window.ExcalidrawLib = ExcalidrawLib;
         console.log("Excalidraw library", ExcalidrawLib);
@@ -163,12 +211,8 @@
             const saveTimeoutRef = React.useRef(null);
             const maxSaveTimeoutRef = React.useRef(null);
             const lastElementsRef = React.useRef(null);
-            const excalidrawRef = React.useRef(null);
-            
-            const handleExcalidrawMount = React.useCallback((excalidrawAPI) => {
-                excalidrawRef.current = excalidrawAPI;
-                console.log('Excalidraw API available:', excalidrawAPI);
-            }, []);
+            const pendingElementsRef = React.useRef(null);
+            const [excalidrawAPI, setExcalidrawAPI] = React.useState(null);
             
             React.useEffect(() => {
                 async function init() {
@@ -199,8 +243,9 @@
                             if (fileData) {
                                 console.log('File loaded:', fileData);
                                 setInitialData(fileData);
-                                // Initialize lastElementsRef with loaded elements
+                                // Initialize refs with loaded data
                                 lastElementsRef.current = fileData.elements || [];
+                                pendingElementsRef.current = fileData.elements || [];
                             }
                         }
                         
@@ -218,22 +263,33 @@
                 init();
             }, []);
             
+            
             const handleChange = React.useCallback((elements, appState, files) => {
                 if (!fileId || !accessToken) return;
                 
-                // Check if elements actually changed
-                const elementsChanged = JSON.stringify(elements) !== JSON.stringify(lastElementsRef.current);
-                
-                if (!elementsChanged) {
-                    return; // No actual drawing changes, skip save
+                // Only save on actual drawing changes, not cursor/viewport changes
+                if (appState.isLoading || appState.isResizing) return;
+    
+                // Check if this is just a cursor/selection change
+                const meaningfulChange = elements.length !== lastElementsRef.current?.length ||
+                    elements.some((el, i) => el.id !== lastElementsRef.current?.[i]?.id);
+    
+                if (!meaningfulChange) return;
+
+                // Check if elements actually changed from what's pending
+                const elementsChangedFromPending = JSON.stringify(elements) !== JSON.stringify(pendingElementsRef.current);
+
+                if (!elementsChangedFromPending) {
+                    return; // No change from what's already pending
                 }
                 
+    	        pendingElementsRef.current = elements;
+
                 console.log('Elements changed, scheduling save...');
-                if (excalidrawRef.current) {
-                    excalidrawRef.current.setToast({
-                        message: "Changes detected...",
-                        type: "info"
-                    });
+                
+                // Show toast if API is available
+                if (excalidrawAPI) {
+                    excalidrawAPI.setToast({ message: "Changes detected..." });
                 }
                 
                 // Clear existing 5-second timeout
@@ -259,7 +315,10 @@
                 }, 5000); // 5 seconds after last change
                 
                 async function performSave(elements, appState, files) {
-                    setSaveStatus('Saving...');
+                    // Show saving toast
+                    if (excalidrawAPI) {
+                        excalidrawAPI.setToast({ message: "Saving to Box..." });
+                    }
                     
                     const data = {
                         type: 'excalidraw',
@@ -270,16 +329,21 @@
                     };
                     
                     const success = await saveFileToBox(fileId, accessToken, data);
-                    setSaveStatus(success ? 'Saved' : 'Save failed');
+                    
+                    // Show result toast
+                    if (excalidrawAPI) {
+                        excalidrawAPI.setToast({ 
+                            message: success ? "Saved to Box!" : "Save failed",
+                            closable: true,
+                            duration: 3000
+                        });
+                    }
                     
                     // Update the last saved elements
                     lastElementsRef.current = elements;
-                    
-                    // Clear status after 2 seconds
-                    setTimeout(() => setSaveStatus(''), 2000);
                 }
-            }, [fileId, accessToken]);
-            
+            }, [fileId, accessToken, excalidrawAPI]);
+
             if (loading) {
                 return React.createElement('div', { className: 'loading' }, [
                     'Loading Excalidraw for Box...',
@@ -300,7 +364,11 @@
 
             const excalidrawProps = {
                 onChange: handleChange,
-                excalidrawAPI: handleExcalidrawMount,
+                excalidrawAPI: (api) => {
+                    setExcalidrawAPI(api);
+                    console.log('Excalidraw API set:', api);
+                },
+                isCollaborating: false,
                 style: { height: "100vh" }
             };
             
@@ -320,7 +388,7 @@
         };
 
         const excalidrawWrapper = document.getElementById("app");
-        const root = ReactDOM.createRoot(excalidrawWrapper);
+        const root = createRoot(excalidrawWrapper);
         root.render(React.createElement(App));
     </script>
 </body>
