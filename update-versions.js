@@ -13,21 +13,21 @@ let html = fs.readFileSync(htmlPath, 'utf8');
 
 console.log('🔄 Updating dependency versions in index.html...\n');
 
-// Update React version
-const oldReactPattern = /https:\/\/unpkg\.com\/react@[\d.]+\//g;
-const newReactUrl = `https://unpkg.com/react@${versions.react}/`;
+// Update React version (ESM.sh)
+const oldReactPattern = /https:\/\/esm\.sh\/react@[\d.]+/g;
+const newReactUrl = `https://esm.sh/react@${versions.react}`;
 html = html.replace(oldReactPattern, newReactUrl);
 console.log(`✅ React: ${versions.react}`);
 
-// Update ReactDOM version  
-const oldReactDomPattern = /https:\/\/unpkg\.com\/react-dom@[\d.]+\//g;
-const newReactDomUrl = `https://unpkg.com/react-dom@${versions['react-dom']}/`;
+// Update ReactDOM version (ESM.sh)
+const oldReactDomPattern = /https:\/\/esm\.sh\/react-dom@[\d.]+/g;
+const newReactDomUrl = `https://esm.sh/react-dom@${versions['react-dom']}`;
 html = html.replace(oldReactDomPattern, newReactDomUrl);
 console.log(`✅ ReactDOM: ${versions['react-dom']}`);
 
-// Update Excalidraw version
-const oldExcalidrawPattern = /https:\/\/unpkg\.com\/@excalidraw\/excalidraw@[\d.]+\//g;
-const newExcalidrawUrl = `https://unpkg.com/@excalidraw/excalidraw@${versions.excalidraw}/`;
+// Update Excalidraw version (ESM.sh)
+const oldExcalidrawPattern = /https:\/\/esm\.sh\/@excalidraw\/excalidraw@[\d.]+/g;
+const newExcalidrawUrl = `https://esm.sh/@excalidraw/excalidraw@${versions.excalidraw}`;
 html = html.replace(oldExcalidrawPattern, newExcalidrawUrl);
 console.log(`✅ Excalidraw: ${versions.excalidraw}`);
 
