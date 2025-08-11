@@ -1,0 +1,9 @@
+# Build output
+dist/
+
+# Development files  
+.DS_Store
+*.log
+
+# Don't commit credentials
+index-with-credentials.html

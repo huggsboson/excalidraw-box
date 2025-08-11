@@ -1,0 +1,17 @@
+{
+  "name": "excalidraw-box-integration",
+  "version": "1.0.0",
+  "description": "Excalidraw integration for Box cloud storage",
+  "scripts": {
+    "dev": "python3 -m http.server 8080",
+    "dev-https": "echo 'For HTTPS: python3 -m http.server 8080 --bind 127.0.0.1'",
+    "update-versions": "node update-versions.js",
+    "check-versions": "node check-versions.js",
+    "validate": "echo 'Checking for placeholder credentials...' && ! grep -q '{{BOX_CLIENT_ID}}' index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/excalidraw-box.git"
+  },
+  "license": "MIT"
+}
