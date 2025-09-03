@@ -90,9 +90,9 @@
                 if (!response.ok) {
                     throw new Error(`Credentials not found: ${response.status}`);
                 }
-                const credentials = await response.json();
-                BOX_CLIENT_ID = credentials.BOX_CLIENT_ID;
-                BOX_CLIENT_SECRET = credentials.BOX_CLIENT_SECRET;
+                const config = await response.json();
+                BOX_CLIENT_ID = config.BOX_CLIENT_ID;
+                BOX_CLIENT_SECRET = config.BOX_CLIENT_SECRET;
                 
                 if (!BOX_CLIENT_ID || !BOX_CLIENT_SECRET) {
                     throw new Error('Missing credentials in credentials.json');
@@ -103,6 +103,30 @@
             } catch (error) {
                 console.error('Failed to load credentials:', error);
                 throw new Error(`Credentials error: ${error.message}`);
+            }
+        }
+
+        async function checkFilePermissions(fileId, token) {
+            try {
+                console.log('Checking file permissions:', fileId);
+                const response = await fetch(`https://api.box.com/2.0/files/${fileId}`, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}` 
+                    }
+                });
+                
+                if (!response.ok) {
+                    console.warn(`Failed to get file info: ${response.status}`);
+                    return true; // Default to writable if we can't check
+                }
+                
+                const fileInfo = await response.json();
+                const canUpload = fileInfo.permissions && fileInfo.permissions.can_upload;
+                console.log('File permissions - can_upload:', canUpload);
+                return canUpload;
+            } catch (error) {
+                console.error('Error checking file permissions:', error);
+                return true; // Default to writable if we can't check
             }
         }
 
@@ -276,6 +300,7 @@
             const [error, setError] = React.useState(null);
             const [accessToken, setAccessToken] = React.useState(null);
             const [loadingStage, setLoadingStage] = React.useState('Initializing...');
+            const [isReadOnly, setIsReadOnly] = React.useState(false);
             const saveTimeoutRef = React.useRef(null);
             const maxSaveTimeoutRef = React.useRef(null);
             const lastElementsRef = React.useRef(null);
@@ -307,7 +332,16 @@
                         
                         console.log('Got access token');
                         setAccessToken(token);
-                        setLoadingStage('Authenticated, loading file...');
+                        setLoadingStage('Checking file permissions...');
+                        
+                        // Check if user can upload to this file
+                        let canUpload = true;
+                        if (fileId) {
+                            canUpload = await checkFilePermissions(fileId, token);
+                            setIsReadOnly(!canUpload);
+                        }
+                        
+                        setLoadingStage('Loading file...');
                         
                         // Load file from Box if we have a file ID
                         let fileData = null;
@@ -323,7 +357,7 @@
                         }
                         
                         setLoadingStage('Ready!');
-                        console.log('Init complete');
+                        console.log('Init complete - Read-only mode:', !canUpload);
                         setLoading(false);
                         
                     } catch (err) {
@@ -336,9 +370,19 @@
                 init();
             }, []);
             
+            // Show read-only notification when API is ready
+            React.useEffect(() => {
+                if (excalidrawAPI && isReadOnly) {
+                    excalidrawAPI.setToast({
+                        message: "File is read-only - viewing mode only",
+                        duration: 5000,
+                        closable: true
+                    });
+                }
+            }, [excalidrawAPI, isReadOnly]);
             
             const handleChange = React.useCallback((elements, appState, files) => {
-                if (!fileId || !accessToken) return;
+                if (!fileId || !accessToken || isReadOnly) return;
                 
                 // Only save on actual drawing changes, not cursor/viewport changes
                 if (appState.isLoading || appState.isResizing) return;
@@ -363,8 +407,6 @@
                 // Show toast if API is available
                 if (excalidrawAPI) {
                     excalidrawAPI.setToast({ message: "Changes detected..." });
-                } else {
-                    console.log('ExcalidrawAPI not available');
                 }
                 
                 // Clear existing 5-second timeout
@@ -417,7 +459,7 @@
                     // Update the last saved elements
                     lastElementsRef.current = elements;
                 }
-            }, [fileId, accessToken]);
+            }, [fileId, accessToken, isReadOnly]);
 
             if (loading) {
                 return React.createElement('div', { className: 'loading' }, [
@@ -438,11 +480,12 @@
             }
 
             const excalidrawProps = {
-                onChange: handleChange,
+                onChange: isReadOnly ? undefined : handleChange, // No onChange handler if read-only
                 excalidrawAPI: (api) => {
                     setExcalidrawAPI(api);
                     console.log('Excalidraw API available:', api);
                 },
+                viewModeEnabled: isReadOnly, // Enable read-only view mode
                 isCollaborating: false,
                 style: { height: "100vh" }
             };
