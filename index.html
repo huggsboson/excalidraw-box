@@ -363,6 +363,8 @@
                 // Show toast if API is available
                 if (excalidrawAPI) {
                     excalidrawAPI.setToast({ message: "Changes detected..." });
+                } else {
+                    console.log('ExcalidrawAPI not available');
                 }
                 
                 // Clear existing 5-second timeout
