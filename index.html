@@ -84,25 +84,25 @@
         let BOX_CLIENT_ID = '';
         let BOX_CLIENT_SECRET = '';
         
-        async function loadConfig() {
+        async function loadCredentials() {
             try {
-                const response = await fetch('./config.json');
+                const response = await fetch('./credentials.json');
                 if (!response.ok) {
-                    throw new Error(`Config not found: ${response.status}`);
+                    throw new Error(`Credentials not found: ${response.status}`);
                 }
-                const config = await response.json();
-                BOX_CLIENT_ID = config.BOX_CLIENT_ID;
-                BOX_CLIENT_SECRET = config.BOX_CLIENT_SECRET;
+                const credentials = await response.json();
+                BOX_CLIENT_ID = credentials.BOX_CLIENT_ID;
+                BOX_CLIENT_SECRET = credentials.BOX_CLIENT_SECRET;
                 
                 if (!BOX_CLIENT_ID || !BOX_CLIENT_SECRET) {
-                    throw new Error('Missing credentials in config.json');
+                    throw new Error('Missing credentials in credentials.json');
                 }
                 
-                console.log('Configuration loaded successfully');
+                console.log('Credentials loaded successfully');
                 return true;
             } catch (error) {
-                console.error('Failed to load config:', error);
-                throw new Error(`Configuration error: ${error.message}`);
+                console.error('Failed to load credentials:', error);
+                throw new Error(`Credentials error: ${error.message}`);
             }
         }
 
@@ -288,7 +288,7 @@
                         setLoadingStage('Loading configuration...');
                         
                         // Load config first
-                        await loadConfig();
+                        await loadCredentials();
                         
                         setLoadingStage('Authenticating with Box...');
                         
