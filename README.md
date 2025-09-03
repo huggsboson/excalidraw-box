@@ -23,7 +23,7 @@ Try it live: [Your GitHub Pages URL]
 1. Go to the [Box Developer Console](https://app.box.com/developers/console)
 2. Click **"Create New App"**
 3. Choose **"Custom App"** and click **"Next"**
-4. Select **"Server Authentication (with JWT)"** or **"User Authentication (OAuth 2.0)"** and click **"Next"**
+4. Select  **"User Authentication (OAuth 2.0)"** and click **"Next"**
 5. Give your app a name (e.g., "Excalidraw Integration") and click **"Create App"**
 
 ### 2. Configure OAuth Settings
@@ -36,9 +36,25 @@ Try it live: [Your GitHub Pages URL]
 3. Under **"Application Scopes"**, ensure these are checked:
    - ✅ Read all files and folders stored in Box
    - ✅ Write all files and folders stored in Box
-4. Under **"Advanced Features"**, ensure these are enabled:
-   - ✅ Perform Actions as Users
-5. Click **"Save Changes"**
+4. Under **"CORS Domains"**, add your domain under Allowed origins
+   ```
+   https://yourdomain.github.io
+   ```
+5. Under **Box Web Integrations**, you'll create 2 web integrations: "Edit with Excalidraw" and "View with Excalidraw" due to the vagaries of how locking works with Box web integrations.  For each specify
+  - Name: "Edit or View with Excalidraw"
+  - Description: "Edit or View your diagram in excalidraw"
+  - Limit support to specific extentions: "excalidraw"
+  - Permissions Requirement: For the Edit flavor select "Full permissions are required", for the View flavor select: "Download permissions are required"
+  - Scopes: The file / folder from which this integration was invoked
+  - For the Edit flavor select "Lock to only allow the current user..."
+  - Client callback url: https://yourusername.github.io/excalidraw-box
+  - Prompt: "Your file will now be opened in excalidraw"
+  - New window settings: Enable the integration will open in a new tab
+  - Callback parameters: 
+    - GET fileId #file_id#
+    - GET authCode #auth_code#
+6. Click **"Save Changes"**
+
 
 ### 3. Get Your Credentials
 
@@ -54,12 +70,7 @@ Try it live: [Your GitHub Pages URL]
    cd excalidraw-box
    ```
 
-2. Edit `index.html` and update the Box credentials:
-   ```javascript
-   // Box OAuth Configuration
-   const BOX_CLIENT_ID = 'your_client_id_here';
-   const BOX_CLIENT_SECRET = 'your_client_secret_here';
-   ```
+2. See credentials.json.md For instructions on how to setup your credentials
 
 3. Deploy to GitHub Pages or your preferred hosting platform
 
