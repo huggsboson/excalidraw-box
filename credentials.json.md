@@ -1,4 +1,9 @@
-Usage: Copy credentials.json.example into credentials.json and put your client id and client secret there and push it to github via the web interface.
+Usage: 
+1. Create a published branch on github
+2. On your published branch: Copy credentials.json.example into credentials.json and put your client id and client secret there and push it to github via the web interface.
+3. Configure github pages to point at your published branch
+4. For ongoing updates to main branch run the following: git checkout published && git rebase main && git push -f oriring published
+
 
 I know, I know, how can you be checking credentials into the repo?!
 
