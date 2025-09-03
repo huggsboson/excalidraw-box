@@ -6,7 +6,5 @@ dist/
 *.log
 
 # Configuration with credentials (DO NOT COMMIT)
-config.json
-
-# Backup files
-config.json.bak
+credentials.json
+credentials.json.bak

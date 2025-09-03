@@ -285,9 +285,9 @@
             React.useEffect(() => {
                 async function init() {
                     try {
-                        setLoadingStage('Loading configuration...');
+                        setLoadingStage('Loading credentials...');
                         
-                        // Load config first
+                        // Load credentials first
                         await loadCredentials();
                         
                         setLoadingStage('Authenticating with Box...');
