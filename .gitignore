@@ -5,5 +5,8 @@ dist/
 .DS_Store
 *.log
 
-# Don't commit credentials
-index-with-credentials.html
+# Configuration with credentials (DO NOT COMMIT)
+config.json
+
+# Backup files
+config.json.bak

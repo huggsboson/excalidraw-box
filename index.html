@@ -73,6 +73,39 @@
         window.ExcalidrawLib = ExcalidrawLib;
         console.log("Excalidraw library", ExcalidrawLib);
 
+        // Get parameters from URL
+        const params = new URLSearchParams(window.location.search);
+        const authCode = params.get('authCode');
+        const fileId = params.get('fileId');
+        
+        console.log('Initial params:', { authCode, fileId });
+        
+        // Configuration variables
+        let BOX_CLIENT_ID = '';
+        let BOX_CLIENT_SECRET = '';
+        
+        async function loadConfig() {
+            try {
+                const response = await fetch('./config.json');
+                if (!response.ok) {
+                    throw new Error(`Config not found: ${response.status}`);
+                }
+                const config = await response.json();
+                BOX_CLIENT_ID = config.BOX_CLIENT_ID;
+                BOX_CLIENT_SECRET = config.BOX_CLIENT_SECRET;
+                
+                if (!BOX_CLIENT_ID || !BOX_CLIENT_SECRET) {
+                    throw new Error('Missing credentials in config.json');
+                }
+                
+                console.log('Configuration loaded successfully');
+                return true;
+            } catch (error) {
+                console.error('Failed to load config:', error);
+                throw new Error(`Configuration error: ${error.message}`);
+            }
+        }
+
         // Helper functions for file serialization
         async function serializeFiles(files) {
             const serializedFiles = {};
@@ -125,17 +158,6 @@
                 reader.readAsDataURL(blob);
             });
         }
-
-        // Box OAuth Configuration - replaced by GitHub Actions
-        const BOX_CLIENT_ID = '{{BOX_CLIENT_ID}}';
-        const BOX_CLIENT_SECRET = '{{BOX_CLIENT_SECRET}}';
-        
-        // Get parameters from URL
-        const params = new URLSearchParams(window.location.search);
-        const authCode = params.get('authCode');
-        const fileId = params.get('fileId');
-        
-        console.log('Initial params:', { authCode, fileId });
         
         async function exchangeCodeForToken(code) {
             try {
@@ -263,6 +285,11 @@
             React.useEffect(() => {
                 async function init() {
                     try {
+                        setLoadingStage('Loading configuration...');
+                        
+                        // Load config first
+                        await loadConfig();
+                        
                         setLoadingStage('Authenticating with Box...');
                         
                         // Must have auth code to proceed
