@@ -303,8 +303,7 @@
             const [isReadOnly, setIsReadOnly] = React.useState(false);
             const saveTimeoutRef = React.useRef(null);
             const maxSaveTimeoutRef = React.useRef(null);
-            const lastElementsRef = React.useRef(null);
-            const pendingElementsRef = React.useRef(null);
+            const lastSceneVersionRef = React.useRef(null);
             const [excalidrawAPI, setExcalidrawAPI] = React.useState(null);
             
             React.useEffect(() => {
@@ -350,9 +349,10 @@
                             if (fileData) {
                                 console.log('File loaded:', fileData);
                                 setInitialData(fileData);
-                                // Initialize refs with loaded data
-                                lastElementsRef.current = fileData.elements || [];
-                                pendingElementsRef.current = fileData.elements || [];
+                                // Initialize scene version if available
+                                if (fileData.elements && ExcalidrawLib.getSceneVersion) {
+                                    lastSceneVersionRef.current = ExcalidrawLib.getSceneVersion(fileData.elements);
+                                }
                             }
                         }
                         
@@ -386,21 +386,18 @@
                 
                 // Only save on actual drawing changes, not cursor/viewport changes
                 if (appState.isLoading || appState.isResizing) return;
-    
-                // Check if this is just a cursor/selection change
-                const meaningfulChange = elements.length !== lastElementsRef.current?.length ||
-                    elements.some((el, i) => el.id !== lastElementsRef.current?.[i]?.id);
-    
-                if (!meaningfulChange) return;
-
-                // Check if elements actually changed from what's pending
-                const elementsChangedFromPending = JSON.stringify(elements) !== JSON.stringify(pendingElementsRef.current);
-
-                if (!elementsChangedFromPending) {
-                    return; // No change from what's already pending
+                
+                // Use scene version to detect meaningful changes
+                const currentSceneVersion = ExcalidrawLib.getSceneVersion ? 
+                    ExcalidrawLib.getSceneVersion(elements) : 
+                    elements.length; // fallback to element count
+                
+                // Skip if no meaningful change detected
+                if (currentSceneVersion === lastSceneVersionRef.current) {
+                    return;
                 }
                 
-    	        pendingElementsRef.current = elements;
+                console.log('Scene version changed:', lastSceneVersionRef.current, '->', currentSceneVersion);
 
                 console.log('Elements changed, scheduling save...');
                 
@@ -456,10 +453,12 @@
                         });
                     }
                     
-                    // Update the last saved elements
-                    lastElementsRef.current = elements;
+                    // Update the last scene version
+                    lastSceneVersionRef.current = ExcalidrawLib.getSceneVersion ? 
+                        ExcalidrawLib.getSceneVersion(elements) : 
+                        elements.length;
                 }
-            }, [fileId, accessToken, isReadOnly, excalidrawAPI]);
+            }, [fileId, accessToken, excalidrawAPI]);
 
             if (loading) {
                 return React.createElement('div', { className: 'loading' }, [
