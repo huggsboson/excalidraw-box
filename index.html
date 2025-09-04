@@ -459,7 +459,7 @@
                     // Update the last saved elements
                     lastElementsRef.current = elements;
                 }
-            }, [fileId, accessToken]);
+            }, [fileId, accessToken, excalidrawAPI]);
 
             if (loading) {
                 return React.createElement('div', { className: 'loading' }, [
