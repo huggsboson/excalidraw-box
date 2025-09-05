@@ -480,8 +480,7 @@
 
             const excalidrawProps = {
                 onChange: isReadOnly ? undefined : handleChange, // No onChange handler if read-only
-                excalidrawAPI: (api) =>  (api) => {
-                    setExcalidrawAPI(api);
+                excalidrawAPI: (api) => {
                     excalidrawAPIRef.current = api;
                     console.log('Excalidraw API available:', api);
                 },
