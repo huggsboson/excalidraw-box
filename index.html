@@ -396,11 +396,14 @@
                 if (currentSceneVersion === lastSceneVersionRef.current) {
                     return;
                 }
-                
+
+                if (saveTimeoutRef.current || maxSaveTimeoutRef.current) {
+                    console.log('Save already scheduled, skipping');
+                    return;
+                }
+
                 console.log('Scene version changed:', lastSceneVersionRef.current, '->', currentSceneVersion);
 
-                console.log('Elements changed, scheduling save...');
-                
                 // Show toast if API is available
                 if (excalidrawAPIRef.current) {
                     excalidrawAPIRef.current.setToast({ message: "Changes detected..." });
