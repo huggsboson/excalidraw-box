@@ -379,8 +379,8 @@
                         closable: true
                     });
                 }
-            }, [excalidrawAPI, isReadOnly]);
-            
+            }, [isReadOnly]);
+
             const handleChange = React.useCallback((elements, appState, files) => {
                 if (!fileId || !accessToken || isReadOnly) return;
                 
