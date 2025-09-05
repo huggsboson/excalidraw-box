@@ -372,8 +372,8 @@
             
             // Show read-only notification when API is ready
             React.useEffect(() => {
-                if (excalidrawAPI && isReadOnly) {
-                    excalidrawAPI.current.setToast({
+                if (excalidrawAPIRef.current && isReadOnly) {
+                    excalidrawAPIRef.current.setToast({
                         message: "File is read-only - viewing mode only",
                         duration: 5000,
                         closable: true
@@ -403,7 +403,7 @@
                 
                 // Show toast if API is available
                 if (excalidrawAPI) {
-                    excalidrawAPI.current.setToast({ message: "Changes detected..." });
+                    excalidrawAPIRef.current.setToast({ message: "Changes detected..." });
                 }
                 
                 // Clear existing 5-second timeout
@@ -431,7 +431,7 @@
                 async function performSave(elements, appState, files) {
                     // Show saving toast
                     if (excalidrawAPI) {
-                        excalidrawAPI.current.setToast({ message: "Saving to Box..." });
+                        excalidrawAPIRef.current.setToast({ message: "Saving to Box..." });
                     }
                     
                     const data = {
@@ -446,7 +446,7 @@
                     
                     // Show result toast
                     if (excalidrawAPI) {
-                        excalidrawAPI.current.setToast({ 
+                        excalidrawAPIRef.current.setToast({ 
                             message: success ? "Saved to Box!" : "Save failed",
                             closable: true,
                             duration: 3000
