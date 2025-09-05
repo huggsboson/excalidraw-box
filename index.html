@@ -402,7 +402,7 @@
                 console.log('Elements changed, scheduling save...');
                 
                 // Show toast if API is available
-                if (excalidrawAPIRef) {
+                if (excalidrawAPIRef.current) {
                     excalidrawAPIRef.current.setToast({ message: "Changes detected..." });
                 }
                 
@@ -430,6 +430,7 @@
                 
                 async function performSave(elements, appState, files) {
                     // Show saving toast
+                    if (excalidrawAPIRef.current) {
                         excalidrawAPIRef.current.setToast({ message: "Saving to Box..." });
                     }
                     
@@ -444,7 +445,7 @@
                     const success = await saveFileToBox(fileId, accessToken, data);
                     
                     // Show result toast
-                    if (excalidrawAPIRef) {
+                    if (excalidrawAPIRef.current) {
                         excalidrawAPIRef.current.setToast({ 
                             message: success ? "Saved to Box!" : "Save failed",
                             closable: true,
