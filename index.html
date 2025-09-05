@@ -429,6 +429,8 @@
                     // Clear the max timeout since we saved
                     clearTimeout(saveTimeoutRef.current);
                     saveTimeoutRef.current = null;
+                    clearTimeout(maxSaveTimeoutRef.current);
+                    maxSaveTimeoutRef.current = null;
                 }, 5000); // 5 seconds after last change
                 
                 async function performSave(elements, appState, files) {
