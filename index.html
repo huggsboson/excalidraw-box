@@ -304,7 +304,7 @@
             const saveTimeoutRef = React.useRef(null);
             const maxSaveTimeoutRef = React.useRef(null);
             const lastSceneVersionRef = React.useRef(null);
-            const [excalidrawAPI, setExcalidrawAPI] = React.useState(null);
+            const excalidrawAPIRef = React.useRef(null);
             
             React.useEffect(() => {
                 async function init() {
@@ -373,7 +373,7 @@
             // Show read-only notification when API is ready
             React.useEffect(() => {
                 if (excalidrawAPI && isReadOnly) {
-                    excalidrawAPI.setToast({
+                    excalidrawAPI.current.setToast({
                         message: "File is read-only - viewing mode only",
                         duration: 5000,
                         closable: true
@@ -403,7 +403,7 @@
                 
                 // Show toast if API is available
                 if (excalidrawAPI) {
-                    excalidrawAPI.setToast({ message: "Changes detected..." });
+                    excalidrawAPI.current.setToast({ message: "Changes detected..." });
                 }
                 
                 // Clear existing 5-second timeout
@@ -431,7 +431,7 @@
                 async function performSave(elements, appState, files) {
                     // Show saving toast
                     if (excalidrawAPI) {
-                        excalidrawAPI.setToast({ message: "Saving to Box..." });
+                        excalidrawAPI.current.setToast({ message: "Saving to Box..." });
                     }
                     
                     const data = {
@@ -446,7 +446,7 @@
                     
                     // Show result toast
                     if (excalidrawAPI) {
-                        excalidrawAPI.setToast({ 
+                        excalidrawAPI.current.setToast({ 
                             message: success ? "Saved to Box!" : "Save failed",
                             closable: true,
                             duration: 3000
@@ -458,7 +458,7 @@
                         ExcalidrawLib.getSceneVersion(elements) : 
                         elements.length;
                 }
-            }, [fileId, accessToken, excalidrawAPI]);
+            }, [fileId, accessToken]);
 
             if (loading) {
                 return React.createElement('div', { className: 'loading' }, [
@@ -480,8 +480,9 @@
 
             const excalidrawProps = {
                 onChange: isReadOnly ? undefined : handleChange, // No onChange handler if read-only
-                excalidrawAPI: (api) => {
+                excalidrawAPI: (api) =>  (api) => {
                     setExcalidrawAPI(api);
+                    excalidrawAPIRef.current = api;
                     console.log('Excalidraw API available:', api);
                 },
                 viewModeEnabled: isReadOnly, // Enable read-only view mode
