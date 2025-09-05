@@ -409,9 +409,6 @@
                     excalidrawAPIRef.current.setToast({ message: "Changes detected..." });
                 }
                 
-                // Clear existing 5-second timeout
-                clearTimeout(saveTimeoutRef.current);
-                
                 // Set up 60-second max timeout if not already running
                 if (!maxSaveTimeoutRef.current) {
                     console.log('Starting 60-second max timer');
@@ -421,14 +418,17 @@
                         maxSaveTimeoutRef.current = null;
                     }, 60000); // 60 seconds max
                 }
+
+                // Clear existing 5-second timeout
+                clearTimeout(saveTimeoutRef.current);
                 
                 // Set up 5-second inactivity timeout
                 saveTimeoutRef.current = setTimeout(async () => {
                     console.log('5-second inactivity timer triggered');
                     await performSave(elements, appState, files);
                     // Clear the max timeout since we saved
-                    clearTimeout(maxSaveTimeoutRef.current);
-                    maxSaveTimeoutRef.current = null;
+                    clearTimeout(saveTimeoutRef.current);
+                    saveTimeoutRef.current = null;
                 }, 5000); // 5 seconds after last change
                 
                 async function performSave(elements, appState, files) {
